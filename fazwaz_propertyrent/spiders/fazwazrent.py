@@ -39,13 +39,15 @@ class FazwazRentSpider(scrapy.Spider):
 
         item['property_type'] = self._extract_basic_info(
             response, 'Property Type')
-        item['furnished'] = self._extract_basic_info(response, 'Furniture')
-        item['seller_name'] = self._extract_basic_info(response, 'Listed By')
-        item['area'] = self._extract_basic_info(response, 'Plot Size')
+        item['furnished'] = (self._extract_basic_info_alt(response, 'Furniture') or self._extract_basic_info(response, 'Furniture'))
+        item['seller_name'] = (self._extract_basic_info_alt(response, 'Listed By') or self._extract_basic_info(response, 'Listed By'))
+        item['area'] = (self._extract_basic_info(response, 'Size') or self._extract_basic_info(response, 'Plot Size'))
 
         item['description'] = self._extract_description(response)
         item['images'] = self._extract_images(response)
         item['fetched_at'] = response.headers.get('Date', b'').decode('utf-8')
+
+        yield item
 
     def _clean_ws(self, text: str) -> str:
         # Collapse internal whitespace per line and remove empty lines
@@ -76,6 +78,12 @@ class FazwazRentSpider(scrapy.Spider):
         # e.g., attribute_key = 'Property Type', 'Furniture', 'Listed By', 'Plot Size'
         data = response.xpath(
             f'//span[normalize-space(text())="{attribute_key}"]/following-sibling::span//text()').getall()
+        return self._clean_ws(' '.join(data)) or ''
+    
+    def _extract_basic_info_alt(self, response, attribute_key) -> str:
+        # e.g., 'Furnished' field
+        data = response.xpath(
+            f'//div[text()[normalize-space() = "{attribute_key}"]]/following-sibling::span/text()').getall()
         return self._clean_ws(' '.join(data)) or ''
 
     def _extract_room_number(self, response, room_type) -> int:

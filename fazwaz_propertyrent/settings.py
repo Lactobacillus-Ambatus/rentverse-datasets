@@ -88,7 +88,7 @@ FEED_EXPORT_ENCODING = "utf-8"
 FEEDS = {
     "rentals.csv": {
         "format": "csv",
-        "overwrite": True,
+        "overwrite": False,
         "fields": [
             "listing_id", "title", "url", "price", "location", "property_type",
             "bedrooms", "bathrooms", "area", "furnished", "description", "images", "seller_name", "fetched_at"
