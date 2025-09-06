@@ -10,4 +10,11 @@ from itemadapter import ItemAdapter
 
 class FazwazPropertyrentPipeline:
     def process_item(self, item, spider):
+        a = ItemAdapter(item)
+        imgs = a.get('images')
+        if isinstance(imgs, (list, tuple)):
+            a['images'] = " | ".join(str(u) for u in imgs if u)
+        for f in ["bedrooms", "bathrooms", "area"]:
+            if a.get(f) is None:
+                a[f] = ''
         return item

@@ -1,5 +1,6 @@
 import re
 import scrapy
+from datetime import datetime, timezone
 
 from fazwaz_propertyrent.items import FazwazPropertyrentItem
 from fazwaz_propertyrent.params import build_start_urls
@@ -7,11 +8,12 @@ from fazwaz_propertyrent.params import build_start_urls
 
 class FazwazRentSpider(scrapy.Spider):
     name = 'fazwazrent'
-    allowed_domains = ['fazwaz.my']
+    allowed_domains = ['fazwaz.my', 'www.fazwaz.my']
 
     def __init__(self, region=None, property_type=None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.start_urls = build_start_urls(region, property_type)
+        self.crawl_started_at = datetime.now(timezone.utc).isoformat()
         self.logger.info(f'Starting URLs: {self.start_urls}')
 
     def parse(self, response):
@@ -50,7 +52,7 @@ class FazwazRentSpider(scrapy.Spider):
 
         item['description'] = self._extract_description(response)
         item['images'] = self._extract_images(response)
-        item['fetched_at'] = response.headers.get('Date', b'').decode('utf-8')
+        item['fetched_at'] = self.crawl_started_at
 
         yield item
 
@@ -91,10 +93,10 @@ class FazwazRentSpider(scrapy.Spider):
             f'//div[text()[normalize-space() = "{attribute_key}"]]/following-sibling::span/text()').getall()
         return self._clean_ws(' '.join(data)) or ''
 
-    def _extract_room_number(self, response, room_type) -> int:
+    def _extract_room_number(self, response, room_type) -> int | None:
         # e.g., room_type = 'Bedroom' or 'Bathroom'
         data = response.xpath(
-            f'//div[.//small[contains(text(), "{room_type}")]]/text()[normalize-space()]').get()
+            f'//div[.//small[contains(text(), "{room_type}")]]/text()[normalize-space()]').get() or ''
         data = self._clean_ws(data)
         if data:
             match = re.search(r'\d+', data)
@@ -108,7 +110,7 @@ class FazwazRentSpider(scrapy.Spider):
         desc = data.xpath('string(.)').get() or ''
         return self._clean_ws(desc) or ''
 
-    def _extract_images(self, response) -> list:
+    def _extract_images(self, response) -> list[str]:
         data = response.xpath(
             '//div[@id="gallery-detail-page-version-4"]//img/@src').getall()
-        return [self._clean_ws(img) for img in data if img]
+        return [response.urljoin(self._clean_ws(img)) for img in data if img]
