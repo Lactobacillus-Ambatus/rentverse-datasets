@@ -7,6 +7,19 @@ import scrapy
 
 
 class FazwazPropertyrentItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+    listing_id = scrapy.Field()
+    title = scrapy.Field()
+    url = scrapy.Field()
+    price = scrapy.Field()
+
+    location = scrapy.Field()
+    property_type = scrapy.Field()
+    bedrooms = scrapy.Field()
+    bathrooms = scrapy.Field()
+    area = scrapy.Field()
+    furnished = scrapy.Field()
+
+    description = scrapy.Field()
+    images = scrapy.Field()
+    seller_name = scrapy.Field()
+    fetched_at = scrapy.Field()
